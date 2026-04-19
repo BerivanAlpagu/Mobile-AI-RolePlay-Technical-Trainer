@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Synthetix AI — Technical Interview Simulator</title>
+    <meta name="description" content="AI-powered technical interview simulator. Clone your GitHub repo and get real-time evaluation of your voice answers using Gemini multimodal AI." />
+    <!-- Modern Font: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- Marked.js for Markdown Parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  </head>
+  <body>
+    <div class="app-container">
+      
+      <!-- Sol Panel: Konfigürasyon ve Repo -->
+      <aside class="sidebar glass-panel">
+        <h1 class="logo">SYNTHETIX <span>.AI</span></h1>
+        
+        <div class="repo-input-group">
+          <label class="input-label">GitHub Repository URL</label>
+          <input type="text" id="repoUrl" placeholder="https://github.com/user/repo" autocomplete="off" />
+          <button id="analyzeBtn" class="neon-button">⚡ Analyze Repo</button>
+        </div>
+
+        <div class="status-box" id="statusBox" style="display: none;">
+          <div class="status-header">
+            <span class="status-dot"></span>
+            <h3>Repository Connected</h3>
+          </div>
+          <p id="statusMsg" class="sub-text">Waiting...</p>
+        </div>
+
+        <!-- Soru Listesi (API'den dinamik gelecek) -->
+        <div class="question-list-container" id="questionListContainer" style="display: none;">
+          <h3 class="panel-title small">📋 Interview Questions</h3>
+          <div id="questionList" class="question-list"></div>
+        </div>
+      </aside>
+
+      <!-- Orta Panel: AI Animasyon ve Kayıt Alanı -->
+      <main class="main-content">
+        <header class="topbar glass-panel">
+          <h2>Technical Interview Session</h2>
+          <div class="session-badge">Session: <span id="sessionIdTxt">Not Started</span></div>
+        </header>
+
+        <div class="interview-viewport glass-panel" id="interviewViewport">
+           <div class="ai-avatar-container">
+              <!-- Animated Glowing Orb -->
+              <div class="glowing-orb" id="glowingOrb"></div>
+              <p class="ai-status-text" id="aiStatusText">Enter Repo to Begin</p>
+              
+              <!-- Kullanıcıya adım adım yönlendirme -->
+              <div class="hint-steps" id="hintSteps">
+                <div class="hint-step">
+                  <span class="hint-step-num">1</span>
+                  <span>Sol panele GitHub repo linkini yapıştır</span>
+                </div>
+                <div class="hint-step">
+                  <span class="hint-step-num">2</span>
+                  <span>Sol panelden bir mülakat sorusu seç</span>
+                </div>
+                <div class="hint-step">
+                  <span class="hint-step-num">3</span>
+                  <span>Mikrofona bas, sesli cevabını ver</span>
+                </div>
+              </div>
+           </div>
+
+           <!-- Aktif Soru Kutusu -->
+           <div class="current-question-box" id="currentQuestionBox" style="display: none;">
+             <div class="question-badge" id="questionBadge">Medium</div>
+             <p id="currentQuestionText">Soru burada görünecek...</p>
+             <button class="listen-btn" id="listenBtn" title="Listen to question">🔊 Listen</button>
+           </div>
+           
+           <div class="voice-controls">
+              <!-- Audio Recording Box (Varsayılan) -->
+              <div id="voiceInputMode" class="input-mode-box">
+                <button id="recordBtn" class="action-btn record-btn" disabled>
+                  🎤 Start Voice Answer
+                </button>
+                <div class="audio-visualizer" id="audioVisualizer" style="display: none;">
+                  <span></span><span></span><span></span><span></span><span></span>
+                  <span></span><span></span><span></span><span></span><span></span>
+                </div>
+                <button id="switchToTextBtn" class="toggle-mode-btn" disabled>⌨️ Write Code / Text</button>
+              </div>
+
+              <!-- Text Area Box (Gizli) -->
+              <div id="textInputMode" class="input-mode-box" style="display: none;">
+                <textarea id="textAnswerInput" class="code-textarea" placeholder="Write your code or answer here..." rows="4"></textarea>
+                <div class="text-actions">
+                  <button id="switchToVoiceBtn" class="toggle-mode-btn">🎤 Switch to Voice</button>
+                  <button id="submitTextBtn" class="action-btn submit-btn">🚀 Submit Answer</button>
+                </div>
+              </div>
+           </div>
+        </div>
+      </main>
+
+      <!-- Sağ Panel: Evaluation / Competency Matrix -->
+      <aside class="right-panel glass-panel">
+        <h3 class="panel-title">Real-Time Evaluation</h3>
+        
+        <!-- Boş state -->
+        <div id="evalEmptyState" class="eval-empty-state">
+          <div class="eval-empty-icon">🧠</div>
+          <p>Select a question and answer vocally.<br/>Your AI evaluation will appear here.</p>
+        </div>
+
+        <!-- Sonuç kartı (API'den gelince) -->
+        <div class="evaluation-card" id="evalCard" style="display: none; cursor: pointer;">
+          <div class="expand-hint" style="text-align: center; color: var(--neon-blue); font-size: 12px; margin-bottom: 16px; opacity: 0.8;">Büyütmek için tıkla 🔍</div>
+          <div class="score-ring" id="scoreRing">
+            <h2 id="evalScore">--</h2>
+            <span>/ 10</span>
+          </div>
+          <div class="eval-details">
+            <h4>🎤 Transcript</h4>
+            <p id="evalTranscript" class="sub-text">...</p>
+            
+            <h4>🧠 Detailed Feedback</h4>
+            <div id="evalFeedback" class="sub-text eval-markdown">...</div>
+            
+            <h4>❌ Missing Points</h4>
+            <div id="evalMissing" class="sub-text eval-markdown highlight-red-container">...</div>
+            
+            <h4>🗺️ Learning Roadmap</h4>
+            <div id="evalRoadmap" class="sub-text eval-markdown highlight-container">...</div>
+          </div>
+        </div>
+
+        <!-- Loading state -->
+        <div id="evalLoading" class="eval-loading" style="display: none;">
+          <div class="eval-spinner"></div>
+          <p>Yapay Zeka cevabınızı analiz ediyor...</p>
+        </div>
+      </aside>
+
+    </div>
+    
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

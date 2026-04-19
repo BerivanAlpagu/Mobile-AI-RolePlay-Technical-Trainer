@@ -33,15 +33,23 @@ def clone_repo(repo_url: str) -> str:
 
 def read_code_files(repo_path: str) -> str:
     """
-    Walk the repository path and read files with extensions .py, .js, .java, .ts
+    Walk the repository path and read files with allowed extensions.
     Concatenate their contents into a single string and return it.
     """
-    print("DEBUG: 1.2 - Kod Dosyaları Okunuyor.") # DEBUG Noktası 1.2
+    print("DEBUG: 1.2 - Kod Dosyaları Okunuyor (Genişletilmiş Dil Desteği).")
     
-    exts = {".py", ".js", ".java", ".ts"}
+    # Desteklenen diller genişletildi (C#, C++, Go, Dart, Web vb.)
+    exts = {".py", ".js", ".java", ".ts", ".cs", ".cpp", ".h", ".go", ".dart", ".html", ".css"}
+    
+    # Gereksiz ve büyük bağımlılık klasörlerini filtrele (Performans ve Token tasarrufu)
+    ignore_dirs = {".git", "node_modules", "venv", "__pycache__", "build", "dist", ".idea", ".dart_tool"}
+    
     parts = []
 
-    for root, _, files in os.walk(repo_path):
+    for root, dirs, files in os.walk(repo_path):
+        # Yoksayılacak klasörlerin içine girmeyi engelle
+        dirs[:] = [d for d in dirs if d not in ignore_dirs]
+        
         for f in files:
             _, ext = os.path.splitext(f)
             if ext.lower() in exts:
