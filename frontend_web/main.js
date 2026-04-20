@@ -1,29 +1,36 @@
 import './style.css'
 
-// ─── Sabitler ─────────────────────────────────────────────────────────────────
+// ─── Constants ─────────────────────────────────────────────────────────────────
 const API_BASE = 'http://127.0.0.1:8000';
 
-// ─── Toast Sistemi ────────────────────────────────────────────────────────────
+// ─── Toast System ────────────────────────────────────────────────────────────
 const toastContainer = document.getElementById('toastContainer');
 
 /**
- * Temaya uygun neon toast bildirimi gösterir.
+ * Shows a neon toast notification according to the theme.
  * @param {'info'|'warning'|'error'|'success'} type
  * @param {string} title
  * @param {string} message
- * @param {number} duration  ms cinsinden (0 = elle kapat)
+ * @param {number} duration  in ms (0 = close manually)
  */
 function showToast(type, title, message, duration = 5000) {
-  const icons   = { info: '💡', warning: '⚠️', error: '❌', success: '✅' };
-  const toast   = document.createElement('div');
+  const iconSvg = {
+    info:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+    warning: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+    error:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+    success: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+  };
+  const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.innerHTML = `
-    <span class="toast-icon">${icons[type] ?? '💡'}</span>
+    <span class="toast-icon">${iconSvg[type] ?? iconSvg.info}</span>
     <div class="toast-body">
       <span class="toast-title">${title}</span>
       <span class="toast-message">${message}</span>
     </div>
-    <button class="toast-close" aria-label="Kapat">✕</button>
+    <button class="toast-close" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
   `;
 
   const close = () => {
@@ -38,11 +45,11 @@ function showToast(type, title, message, duration = 5000) {
   return toast;
 }
 
-// ─── URL Doğrulama ────────────────────────────────────────────────────────────
+// ─── URL Validation ────────────────────────────────────────────────────────────
 /**
- * Girilen URL'in gerçek bir GitHub repo linki olup olmadığını kontrol eder.
- * Sadece profil sayfası (github.com/user) ise false döner.
- * Repo (github.com/user/repo) ise true döner.
+ * Checks if the entered URL is a genuine GitHub repo link.
+ * Returns false if it's just a profile page (github.com/user).
+ * Returns true if it's a repository (github.com/user/repo).
  */
 function validateGithubRepoUrl(url) {
   try {
@@ -50,7 +57,7 @@ function validateGithubRepoUrl(url) {
     if (!parsed.hostname.includes('github.com')) {
       return { valid: false, reason: 'not_github' };
     }
-    // Yol: /kullanici/repo → en az 2 segment olmalı
+    // Path: /user/repo → must have at least 2 segments
     const segments = parsed.pathname.replace(/^\//, '').replace(/\/$/, '').split('/');
     if (segments.length < 2 || segments[1] === '') {
       return { valid: false, reason: 'profile_only', username: segments[0] };
@@ -61,7 +68,7 @@ function validateGithubRepoUrl(url) {
   }
 }
 
-// ─── DOM Referansları ─────────────────────────────────────────────────────────
+// ─── DOM References ─────────────────────────────────────────────────────────
 const repoInput            = document.getElementById('repoUrl');
 const analyzeBtn           = document.getElementById('analyzeBtn');
 const statusBox            = document.getElementById('statusBox');
@@ -100,14 +107,14 @@ const evalFeedback         = document.getElementById('evalFeedback');
 const evalMissing          = document.getElementById('evalMissing');
 const evalRoadmap          = document.getElementById('evalRoadmap');
 
-// ─── Uygulama Durumu ──────────────────────────────────────────────────────────
+// ─── Application State ──────────────────────────────────────────────────────────
 let currentSessionId   = null;
 let activeQuestion     = null;  // { text, difficulty }
 let mediaRecorder      = null;
 let audioChunks        = [];
 let isRecording        = false;
 
-// ─── YARDIMCI: Orb Durumu ─────────────────────────────────────────────────────
+// ─── HELPER: Orb State ─────────────────────────────────────────────────────
 function setOrbState(state) {
   // state: 'idle' | 'thinking' | 'listening' | 'processing'
   glowingOrb.className = 'glowing-orb';
@@ -115,7 +122,7 @@ function setOrbState(state) {
   if (state === 'listening') glowingOrb.classList.add('speaking');
 }
 
-// ─── YARDIMCI: Skor Ring Rengi ────────────────────────────────────────────────
+// ─── HELPER: Score Ring Color ────────────────────────────────────────────────
 function applyScoreStyle(score) {
   const n = parseFloat(score);
   scoreRing.classList.remove('high', 'mid', 'low');
@@ -124,7 +131,7 @@ function applyScoreStyle(score) {
   else               scoreRing.classList.add('low');
 }
 
-// ─── YARDIMCI: Soru Listesini Render Et ──────────────────────────────────────
+// ─── HELPER: Render Question List ──────────────────────────────────────
 const DIFFICULTY_ORDER = [
   'general_super_easy', 'general_easy', 'general_medium', 'general_hard',
   'repo_easy', 'repo_medium', 'repo_hard'
@@ -152,7 +159,7 @@ function renderQuestionList(questions) {
     section.className = 'accordion-section';
     section.dataset.level = level;
 
-    // Badge renk sınıfı
+    // Badge color mapping
     const badgeColors = {
       general_super_easy: '#00ff88',
       general_easy: '#00f0ff',
@@ -170,7 +177,7 @@ function renderQuestionList(questions) {
     header.innerHTML = `
       <div class="accordion-header-left">
         <span class="q-badge" style="color: ${color}; border-color: ${color}">${DIFFICULTY_LABELS[level]}</span>
-        <span class="accordion-count">${qs.length} soru</span>
+        <span class="accordion-count">${qs.length} qs</span>
       </div>
       <span class="accordion-chevron">▼</span>
     `;
@@ -189,7 +196,7 @@ function renderQuestionList(questions) {
       body.appendChild(item);
     });
 
-    // Accordion toggle: tıklayınca aç, diğerlerini kapat
+    // Accordion toggle: open on click, close others
     header.addEventListener('click', () => {
       const isOpen = section.classList.contains('open');
       // Diğer tüm section'ları kapat
@@ -204,18 +211,18 @@ function renderQuestionList(questions) {
   });
 }
 
-// ─── YARDIMCI: Soru Seç ──────────────────────────────────────────────────────
+// ─── HELPER: Select Question ──────────────────────────────────────────────────────
 function selectQuestion(itemEl, difficulty, text) {
-  // Önceki aktifi kaldır
+  // Remove previous active state
   document.querySelectorAll('.question-item.active').forEach(el => el.classList.remove('active'));
   itemEl.classList.add('active');
 
   activeQuestion = { text, difficulty };
 
-  // Hint adımlarını gizle
+  // Hide hint steps
   if (hintSteps) hintSteps.style.display = 'none';
 
-  // Orta alandaki soru kutusunu göster
+  // Show active question box in center panel
   questionBadge.textContent = DIFFICULTY_LABELS[difficulty];
   questionBadge.className = `question-badge`;
   const badgeColors = {
@@ -244,39 +251,39 @@ function selectQuestion(itemEl, difficulty, text) {
   switchToTextBtn.disabled = false;
   setOrbState('idle');
 
-  // Sağ paneli temizle
+  // Clear right panel
   evalCard.style.display = 'none';
   evalLoading.style.display = 'none';
   evalEmptyState.style.display = 'flex';
 }
 
-// ─── 1. REPO ANALİZİ ─────────────────────────────────────────────────────────
+// ─── 1. REPOSITORY ANALYSIS ─────────────────────────────────────────────────────────
 analyzeBtn.addEventListener('click', async () => {
   const url = repoInput.value.trim();
 
-  // ── Boş alan ──
+  // ── Empty field check ──
   if (!url) {
-    showToast('warning', 'URL Girilmedi', 'Lütfen analiz etmek istediğiniz GitHub repo bağlantısını girin.');
+    showToast('warning', 'No URL Entered', 'Please paste a GitHub repository link to analyze.');
     repoInput.focus();
     return;
   }
 
-  // ── URL Doğrulama ──
+  // ── URL Validation ──
   const check = validateGithubRepoUrl(url);
   if (!check.valid) {
     if (check.reason === 'profile_only') {
       showToast(
         'warning',
-        'Profil Linki Girildi',
-        `<strong>github.com/${check.username}</strong> bir kullanıcı profili. ` +
-        'Lütfen belirli bir repo linki ekleyin:<br>' +
-        `<code style="color:#00f0ff">github.com/${check.username}/repo-adı</code>`,
+        'Profile URL Detected',
+        `<strong>github.com/${check.username}</strong> is a user profile, not a repository. ` +
+        'Please enter a specific repo link:<br>' +
+        `<code style="color:#00f0ff">github.com/${check.username}/repo-name</code>`,
         7000
       );
     } else if (check.reason === 'not_github') {
-      showToast('error', 'Geçersiz Platform', 'Yalnızca GitHub repo linkleri desteklenmektedir.');
+      showToast('error', 'Invalid Platform', 'Only GitHub repository links are supported.');
     } else {
-      showToast('error', 'Geçersiz URL', 'Lütfen geçerli bir GitHub repo URL\'si girin.');
+      showToast('error', 'Invalid URL', 'Please enter a valid GitHub repository URL.');
     }
     repoInput.focus();
     return;
@@ -299,17 +306,17 @@ analyzeBtn.addEventListener('click', async () => {
 
     if (!res.ok) {
       const err = await res.json();
-      // Repo bulunamadı mı?
+      // Repository not found?
       const detail = err.detail || '';
       if (detail.toLowerCase().includes('not found') || detail.toLowerCase().includes('repository')) {
         showToast(
           'error',
-          'Repo Bulunamadı',
-          `<strong>${url}</strong> adresi erişilebilir değil.<br>Repo'nun public olduğundan emin olun.`,
+          'Repository Not Found',
+          `<strong>${url}</strong> is not accessible.<br>Make sure the repository is public.`,
           7000
         );
       } else {
-        showToast('error', 'Sunucu Hatası', detail || 'Bilinmeyen bir hata oluştu.');
+        showToast('error', 'Server Error', detail || 'An unknown error occurred.');
       }
       setOrbState('idle');
       aiStatusText.textContent = 'Enter Repo to Begin';
@@ -329,23 +336,23 @@ analyzeBtn.addEventListener('click', async () => {
 
     setOrbState('idle');
     aiStatusText.textContent = 'Select a question from the left panel.';
-    showToast('success', 'Repo Bağlandı!', `${total} mülakat sorusu hazırlandı. Sol panelden bir soru seçin.`, 5000);
+    showToast('success', 'Repository Connected!', `${total} interview questions generated. Select a question from the left panel.`, 5000);
 
   } catch (e) {
-    showToast('error', 'Bağlantı Hatası', 'Backend\'e ulaşılamıyor. Backend\'in çalıştığından emin olun.');
+    showToast('error', 'Connection Error', 'Cannot reach the backend. Make sure the server is running.');
     setOrbState('idle');
     aiStatusText.textContent = 'Enter Repo to Begin';
     console.error(e);
   } finally {
-    analyzeBtn.textContent = '⚡ Analyze Repo';
+    analyzeBtn.innerHTML = `<span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span> Analyze Repo`;
     analyzeBtn.disabled = false;
   }
 });
 
-// ─── 2. SESİ DİNLE (TTS) ──────────────────────────────────────────────────────
+// ─── 2. LISTEN (TTS) ──────────────────────────────────────────────────────
 listenBtn.addEventListener('click', async () => {
   if (!activeQuestion) return;
-  listenBtn.textContent = '🔊 ...';
+  listenBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> Loading...`;
   listenBtn.disabled = true;
   try {
     const res = await fetch(`${API_BASE}/listen_question?text=${encodeURIComponent(activeQuestion.text)}`);
@@ -358,17 +365,17 @@ listenBtn.addEventListener('click', async () => {
   } catch (e) {
     console.error('TTS error:', e);
   } finally {
-    listenBtn.textContent = '🔊 Listen';
+    listenBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> Listen`;
     listenBtn.disabled = false;
   }
 });
 
-// ─── 3. SES KAYDI (MediaRecorder) ────────────────────────────────────────────
+// ─── 3. RECORD AUDIO (MediaRecorder) ────────────────────────────────────────────
 recordBtn.addEventListener('click', async () => {
   if (!activeQuestion) return;
 
   if (!isRecording) {
-    // ── Kaydı Başlat ──
+    // ── Start Recording ──
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       audioChunks = [];
@@ -383,7 +390,7 @@ recordBtn.addEventListener('click', async () => {
 
       isRecording = true;
       recordBtn.classList.add('recording');
-      recordBtn.textContent = '⏹ Stop Answering';
+      recordBtn.innerHTML = `<span class="record-btn-icon"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="18" height="18"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></span> Stop Answering`;
       aiStatusText.textContent = 'Listening carefully...';
       setOrbState('listening');
       audioVisualizer.style.display = 'flex';
@@ -392,10 +399,10 @@ recordBtn.addEventListener('click', async () => {
       console.error(err);
     }
   } else {
-    // ── Kaydı Durdur ──
+    // ── Stop Recording ──
     isRecording = false;
     recordBtn.classList.remove('recording');
-    recordBtn.textContent = '🎤 Start Answering';
+    recordBtn.innerHTML = `<span class="record-btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></span> Start Answering`;
     recordBtn.disabled = true;
     audioVisualizer.style.display = 'none';
     setOrbState('thinking');
@@ -403,7 +410,7 @@ recordBtn.addEventListener('click', async () => {
 
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
-      // Mikrofon akışını kapat
+      // Close mic stream
       mediaRecorder.stream.getTracks().forEach(t => t.stop());
     }
   }
@@ -423,12 +430,12 @@ switchToVoiceBtn.addEventListener('click', () => {
   aiStatusText.textContent = 'Ready to listen...';
 });
 
-// ─── 4A. TEXT SUBMIT → API'YE GÖNDER ─────────────────────────────────────────
+// ─── 4A. TEXT SUBMIT → SEND TO API ─────────────────────────────────────────
 submitTextBtn.addEventListener('click', async () => {
   if (!activeQuestion) return;
   const answer = textAnswerInput.value.trim();
   if (!answer) {
-    showToast('warning', 'Boş Cevap', 'Lütfen kodunuzu veya açıklamanızı yazın.');
+    showToast('warning', 'Empty Answer', 'Please write your code or explanation before submitting.');
     return;
   }
 
@@ -458,10 +465,10 @@ submitTextBtn.addEventListener('click', async () => {
 
     const data = await res.json();
     renderEvaluation(data.evaluation);
-    showToast('success', 'Değerlendirme Tamam', 'Cevabınız incelendi.');
+    showToast('success', 'Evaluation Complete', 'Your answer has been analyzed.');
 
   } catch (e) {
-    showToast('error', 'Değerlendirme Hatası', 'Cevap analiz edilirken bir hata oluştu.');
+    showToast('error', 'Evaluation Failed', 'An error occurred while analyzing your answer.');
     evalLoading.style.display = 'none';
     evalEmptyState.style.display = 'flex';
     console.error(e);
@@ -472,19 +479,19 @@ submitTextBtn.addEventListener('click', async () => {
   }
 });
 
-// ─── 4B. VOICE RECORDING STOPPED → API'YE GÖNDER ─────────────────────────────
+// ─── 4B. VOICE RECORDING STOPPED → SEND TO API ─────────────────────────────
 async function handleRecordingStop() {
   const mimeType = getSupportedMimeType();
   const audioBlob = new Blob(audioChunks, { type: mimeType });
 
-  // Sağ paneli → loading state'e al
+  // Right panel → loading state
   evalCard.style.display = 'none';
   evalEmptyState.style.display = 'none';
   evalLoading.style.display = 'flex';
 
   try {
     const formData = new FormData();
-    // Backend webm ya da ogg alabilir; pydub dönüştürür
+    // Backend can take webm or ogg; pydub converts
     const ext = mimeType.includes('webm') ? 'webm' : 'ogg';
     formData.append('file', audioBlob, `answer.${ext}`);
 
@@ -505,7 +512,7 @@ async function handleRecordingStop() {
     renderEvaluation(data.evaluation);
 
   } catch (e) {
-    showToast('error', 'Değerlendirme Hatası', 'Ses analiz edilirken bir hata oluştu. Lütfen tekrar deneyin.');
+    showToast('error', 'Evaluation Failed', 'Could not analyze voice recording. Please try again.');
     evalLoading.style.display = 'none';
     evalEmptyState.style.display = 'flex';
     console.error(e);
@@ -516,7 +523,7 @@ async function handleRecordingStop() {
   }
 }
 
-// ─── 5. DEĞERLENDİRMEYİ RENDER ET ───────────────────────────────────────────
+// ─── 5. RENDER EVALUATION ───────────────────────────────────────────────────────────
 function renderEvaluation(ev) {
   const score = ev.overall_score ?? ev.score ?? '—';
   evalScore.textContent = score;
@@ -544,7 +551,7 @@ function renderEvaluation(ev) {
   evalCard.style.display       = 'block';
 }
 
-// ─── YARDIMCI: Tarayıcı Destekli MIME Tipi ───────────────────────────────────
+// ─── HELPER: Browser Supported MIME Type ───────────────────────────────────
 function getSupportedMimeType() {
   const types = [
     'audio/webm;codecs=opus',
@@ -558,12 +565,12 @@ function getSupportedMimeType() {
   return '';
 }
 
-// ─── UX: Tıkla ve Büyüt (Expand Panel) ──────────────────────────────────────
+// ─── UX: Click to Expand (Evaluation Panel) ──────────────────────────────────────
 const appContainer = document.querySelector('.app-container');
 const rightPanel = document.querySelector('.right-panel');
 
 rightPanel.addEventListener('click', (e) => {
-  // Sadece sonuçlar varken ve evalLoading kapalıyken tıklandığında büyüsün
+  // Only expand if results are present and not loading
   if (evalCard.style.display === 'block') {
     appContainer.classList.toggle('eval-expanded');
   }

@@ -68,17 +68,23 @@ def _build_evaluation_prompt(question: str, user_answer_text: str, code_context:
     Prepares a high-level English prompt for Gemini to act as an Elite Interviewer.
     """
     return (
-        "ACT AS: A helpful, constructive, and fair Senior Technical Interviewer.\n"
+        "ACT AS: A supportive and encouraging Senior Technical Interviewer who genuinely wants candidates to succeed.\n"
         f"SOURCE CODE CONTEXT:\n{code_context}\n"
         f"INTERVIEW QUESTION:\n{question}\n"
         f"CANDIDATE'S RESPONSE:\n{user_answer_text}\n\n"
+        "SCORING PHILOSOPHY:\n"
+        "- Reward intent and partial understanding very generously.\n"
+        "- A response that captures the core idea but lacks precision = 7.5-8.5.\n"
+        "- A solid, clear answer with minor gaps = 8.5-9.5.\n"
+        "- Only score below 5.5 if the answer is fundamentally wrong or completely off-topic.\n"
+        "- When in doubt, score significantly higher rather than lower.\n\n"
         "EVALUATION REQUIREMENTS:\n"
-        "1. Score the answer from 0.0 to 10.0 based on technical accuracy. Be constructive and realistic—do not be overly harsh. A decent answer should get a 7-8, an excellent one 9-10.\n"
-        "2. Analyze if the candidate correctly referenced the specific code logic provided.\n"
-        "3. Identify critical technical concepts the candidate missed.\n"
-        "4. Provide a structured learning path with professional links.\n\n"
+        "1. Score from 0.0 to 10.0. Prioritize what the candidate GOT RIGHT before penalizing what they missed.\n"
+        "2. Note if the candidate touched on the code context, even loosely.\n"
+        "3. List only the most critical 2-3 missing points, not every minor gap.\n"
+        "4. Provide a short, actionable learning roadmap.\n\n"
         "RESPONSE FORMAT: Return ONLY a valid JSON object with keys: "
-        "'overall_score' (number), 'detailed_feedback' (string), 'missing_points' (List of strictly strings, NOT objects), 'learning_roadmap' (List of strictly strings, NOT objects)."
+        "'overall_score' (number), 'detailed_feedback' (string), 'missing_points' (List of max 3 strings), 'learning_roadmap' (List of max 4 strings)."
     )
 
 def evaluate_candidate_answer(question: str, user_answer: str, code_context: str) -> Dict:
@@ -106,18 +112,24 @@ def _build_audio_evaluation_prompt(question: str, code_context: str) -> str:
     Mülakat sorusu ve adayın SESLİ KAYDI için özel hazırlanmış Multimodal Prompt.
     """
     return (
-        "ACT AS: A helpful, constructive, and fair Senior Technical Interviewer.\n"
+        "ACT AS: A supportive and encouraging Senior Technical Interviewer who genuinely wants candidates to succeed.\n"
         f"SOURCE CODE CONTEXT:\n{code_context}\n"
         f"INTERVIEW QUESTION:\n{question}\n"
-        "CANDIDATE'S RESPONSE: Please listen to the strictly provided audio file. It contains the candidate's exact verbal answer.\n\n"
+        "CANDIDATE'S RESPONSE: Listen carefully to the provided audio file — it contains the candidate's verbal answer.\n\n"
+        "SCORING PHILOSOPHY:\n"
+        "- Reward intent and partial understanding very generously.\n"
+        "- A response that captures the core idea but lacks precision = 7.5-8.5.\n"
+        "- A solid, clear answer with minor gaps = 8.5-9.5.\n"
+        "- Only score below 5.5 if the answer is fundamentally wrong or completely off-topic.\n"
+        "- When in doubt, score significantly higher rather than lower.\n\n"
         "EVALUATION REQUIREMENTS:\n"
-        "1. First, perfectly and accurately transcribe what the candidate said in the audio considering deep technical concepts.\n"
-        "2. Score the answer from 0.0 to 10.0 based on technical accuracy related to the code context. Be constructive and realistic—do not be overly harsh. A decent answer should get a 7-8.\n"
-        "3. Analyze if the candidate correctly referenced the specific code logic provided.\n"
-        "4. Identify critical technical concepts the candidate missed.\n"
-        "5. Provide a structured learning path with professional links.\n\n"
+        "1. Accurately transcribe the candidate's verbal answer from the audio.\n"
+        "2. Score from 0.0 to 10.0. Prioritize what the candidate GOT RIGHT before penalizing what they missed.\n"
+        "3. Note if the candidate touched on the code context, even loosely.\n"
+        "4. List only the most critical 2-3 missing points, not every minor gap.\n"
+        "5. Provide a short, actionable learning roadmap.\n\n"
         "RESPONSE FORMAT: Return ONLY a valid JSON object with keys: "
-        "'transcript' (string), 'overall_score' (number), 'detailed_feedback' (string), 'missing_points' (List of strictly strings, NOT objects), 'learning_roadmap' (List of strictly strings, NOT objects)."
+        "'transcript' (string), 'overall_score' (number), 'detailed_feedback' (string), 'missing_points' (List of max 3 strings), 'learning_roadmap' (List of max 4 strings)."
     )
 
 import google.generativeai as legacy_genai

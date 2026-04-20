@@ -5,24 +5,28 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Synthetix AI — Technical Interview Simulator</title>
-    <meta name="description" content="AI-powered technical interview simulator. Clone your GitHub repo and get real-time evaluation of your voice answers using Gemini multimodal AI." />
+    <meta name="description" content="AI-powered technical interview simulator. Clone your GitHub repo and get real-time evaluation of your voice answers using multimodal AI." />
     <!-- Modern Font: Outfit -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    
     <!-- Marked.js for Markdown Parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   </head>
   <body>
     <div class="app-container">
       
-      <!-- Sol Panel: Konfigürasyon ve Repo -->
+      <!-- Left Panel: Config & Repo -->
       <aside class="sidebar glass-panel">
         <h1 class="logo">SYNTHETIX <span>.AI</span></h1>
         
         <div class="repo-input-group">
           <label class="input-label">GitHub Repository URL</label>
           <input type="text" id="repoUrl" placeholder="https://github.com/user/repo" autocomplete="off" />
-          <button id="analyzeBtn" class="neon-button">⚡ Analyze Repo</button>
+          <button id="analyzeBtn" class="neon-button">
+            <span class="btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            </span>
+            Analyze Repo
+          </button>
         </div>
 
         <div class="status-box" id="statusBox" style="display: none;">
@@ -33,14 +37,19 @@
           <p id="statusMsg" class="sub-text">Waiting...</p>
         </div>
 
-        <!-- Soru Listesi (API'den dinamik gelecek) -->
+        <!-- Question List -->
         <div class="question-list-container" id="questionListContainer" style="display: none;">
-          <h3 class="panel-title small">📋 Interview Questions</h3>
+          <h3 class="panel-title small">
+            <span class="panel-title-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            </span>
+            Interview Questions
+          </h3>
           <div id="questionList" class="question-list"></div>
         </div>
       </aside>
 
-      <!-- Orta Panel: AI Animasyon ve Kayıt Alanı -->
+      <!-- Center Panel: AI animation & recording -->
       <main class="main-content">
         <header class="topbar glass-panel">
           <h2>Technical Interview Session</h2>
@@ -53,83 +62,127 @@
               <div class="glowing-orb" id="glowingOrb"></div>
               <p class="ai-status-text" id="aiStatusText">Enter Repo to Begin</p>
               
-              <!-- Kullanıcıya adım adım yönlendirme -->
+              <!-- Step-by-step user guide -->
               <div class="hint-steps" id="hintSteps">
                 <div class="hint-step">
                   <span class="hint-step-num">1</span>
-                  <span>Sol panele GitHub repo linkini yapıştır</span>
+                  <span>Paste your GitHub repo link in the left panel</span>
                 </div>
                 <div class="hint-step">
                   <span class="hint-step-num">2</span>
-                  <span>Sol panelden bir mülakat sorusu seç</span>
+                  <span>Select an interview question from the list</span>
                 </div>
                 <div class="hint-step">
                   <span class="hint-step-num">3</span>
-                  <span>Mikrofona bas, sesli cevabını ver</span>
+                  <span>Record your voice answer or type your response</span>
                 </div>
               </div>
            </div>
 
-           <!-- Aktif Soru Kutusu -->
+           <!-- Active Question Box -->
            <div class="current-question-box" id="currentQuestionBox" style="display: none;">
              <div class="question-badge" id="questionBadge">Medium</div>
-             <p id="currentQuestionText">Soru burada görünecek...</p>
-             <button class="listen-btn" id="listenBtn" title="Listen to question">🔊 Listen</button>
+             <p id="currentQuestionText">Question will appear here...</p>
+             <button class="listen-btn" id="listenBtn" title="Listen to question">
+               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+               Listen
+             </button>
            </div>
            
            <div class="voice-controls">
-              <!-- Audio Recording Box (Varsayılan) -->
+              <!-- Audio Recording Box (Default) -->
               <div id="voiceInputMode" class="input-mode-box">
                 <button id="recordBtn" class="action-btn record-btn" disabled>
-                  🎤 Start Voice Answer
+                  <span class="record-btn-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                  </span>
+                  Start Voice Answer
                 </button>
                 <div class="audio-visualizer" id="audioVisualizer" style="display: none;">
                   <span></span><span></span><span></span><span></span><span></span>
                   <span></span><span></span><span></span><span></span><span></span>
                 </div>
-                <button id="switchToTextBtn" class="toggle-mode-btn" disabled>⌨️ Write Code / Text</button>
+                <button id="switchToTextBtn" class="toggle-mode-btn" disabled>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+                  Write Code / Text
+                </button>
               </div>
 
-              <!-- Text Area Box (Gizli) -->
+              <!-- Text Area Box (Hidden) -->
               <div id="textInputMode" class="input-mode-box" style="display: none;">
                 <textarea id="textAnswerInput" class="code-textarea" placeholder="Write your code or answer here..." rows="4"></textarea>
                 <div class="text-actions">
-                  <button id="switchToVoiceBtn" class="toggle-mode-btn">🎤 Switch to Voice</button>
-                  <button id="submitTextBtn" class="action-btn submit-btn">🚀 Submit Answer</button>
+                  <button id="switchToVoiceBtn" class="toggle-mode-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                    Switch to Voice
+                  </button>
+                  <button id="submitTextBtn" class="action-btn submit-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    Submit Answer
+                  </button>
                 </div>
               </div>
            </div>
         </div>
       </main>
 
-      <!-- Sağ Panel: Evaluation / Competency Matrix -->
+      <!-- Right Panel: Evaluation -->
       <aside class="right-panel glass-panel">
         <h3 class="panel-title">Real-Time Evaluation</h3>
         
-        <!-- Boş state -->
+        <!-- Empty state -->
         <div id="evalEmptyState" class="eval-empty-state">
-          <div class="eval-empty-icon">🧠</div>
-          <p>Select a question and answer vocally.<br/>Your AI evaluation will appear here.</p>
+          <div class="eval-empty-icon">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="32" cy="32" r="28" stroke="rgba(0,240,255,0.15)" stroke-width="2"/>
+              <path d="M20 32 C20 25, 32 18, 32 18 C32 18, 44 25, 44 32 C44 39, 32 46, 32 46 C32 46, 20 39, 20 32Z" stroke="rgba(0,240,255,0.3)" stroke-width="1.5" fill="none"/>
+              <circle cx="32" cy="32" r="5" stroke="rgba(0,240,255,0.4)" stroke-width="1.5" fill="none"/>
+            </svg>
+          </div>
+          <p>Select a question and record your answer.<br/>Your AI evaluation will appear here.</p>
         </div>
 
-        <!-- Sonuç kartı (API'den gelince) -->
+        <!-- Result card -->
         <div class="evaluation-card" id="evalCard" style="display: none; cursor: pointer;">
-          <div class="expand-hint" style="text-align: center; color: var(--neon-blue); font-size: 12px; margin-bottom: 16px; opacity: 0.8;">Büyütmek için tıkla 🔍</div>
+          <div class="expand-hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+            Click to expand
+          </div>
           <div class="score-ring" id="scoreRing">
             <h2 id="evalScore">--</h2>
             <span>/ 10</span>
           </div>
           <div class="eval-details">
-            <h4>🎤 Transcript</h4>
+            <h4>
+              <span class="eval-section-icon transcript-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </span>
+              Transcript
+            </h4>
             <p id="evalTranscript" class="sub-text">...</p>
             
-            <h4>🧠 Detailed Feedback</h4>
+            <h4>
+              <span class="eval-section-icon feedback-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </span>
+              Detailed Feedback
+            </h4>
             <div id="evalFeedback" class="sub-text eval-markdown">...</div>
             
-            <h4>❌ Missing Points</h4>
+            <h4>
+              <span class="eval-section-icon missing-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              </span>
+              Missing Points
+            </h4>
             <div id="evalMissing" class="sub-text eval-markdown highlight-red-container">...</div>
             
-            <h4>🗺️ Learning Roadmap</h4>
+            <h4>
+              <span class="eval-section-icon roadmap-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+              </span>
+              Learning Roadmap
+            </h4>
             <div id="evalRoadmap" class="sub-text eval-markdown highlight-container">...</div>
           </div>
         </div>
@@ -137,7 +190,7 @@
         <!-- Loading state -->
         <div id="evalLoading" class="eval-loading" style="display: none;">
           <div class="eval-spinner"></div>
-          <p>Yapay Zeka cevabınızı analiz ediyor...</p>
+          <p>Analyzing your answer...</p>
         </div>
       </aside>
 
