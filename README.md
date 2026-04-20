@@ -5,7 +5,7 @@ Bu proje, teknik mülakat hazırlığı sürecini yapay zeka ile simüle eden, s
 ## 🏗️ Mimari Yapı
 Proje iki ana bölümden oluşmaktadır:
 - **Backend:** FastAPI (Python) ve Google Gemini AI kullanılarak geliştirilmiştir. Ses işleme ve analiz süreçlerini yönetir.
-- **Frontend:** Flutter (Dart) kullanılarak geliştirilmiştir. Cross-platform desteği ile mobil cihazlarda çalışır.
+- **Frontend:** 
 
 ## 🚀 Özellikler
 - **Gerçekçi Rol Yapma:** AI, teknik bir mülakatçı gibi davranır.
