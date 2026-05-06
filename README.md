@@ -386,4 +386,3 @@ The SQLite database (`interview_app.db`) is automatically created in `backend/` 
 This project is for educational purposes. All rights reserved.
 
 ---
-
